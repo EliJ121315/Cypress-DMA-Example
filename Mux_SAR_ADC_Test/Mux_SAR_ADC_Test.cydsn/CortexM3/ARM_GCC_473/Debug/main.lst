@@ -1,0 +1,1204 @@
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 6
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.file	"main.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.comm	DMA_1_Chan,1,1
+  19              		.comm	DMA_1_TD,1,4
+  20              		.global	DMAADCResultArray
+  21              		.bss
+  22              		.align	2
+  23              		.type	DMAADCResultArray, %object
+  24              		.size	DMAADCResultArray, 12
+  25              	DMAADCResultArray:
+  26 0000 00000000 		.space	12
+  26      00000000 
+  26      00000000 
+  27              		.global	MEMCPYResultArray
+  28              		.align	2
+  29              		.type	MEMCPYResultArray, %object
+  30              		.size	MEMCPYResultArray, 12
+  31              	MEMCPYResultArray:
+  32 000c 00000000 		.space	12
+  32      00000000 
+  32      00000000 
+  33              		.global	APIFUNResultArray
+  34              		.align	2
+  35              		.type	APIFUNResultArray, %object
+  36              		.size	APIFUNResultArray, 12
+  37              	APIFUNResultArray:
+  38 0018 00000000 		.space	12
+  38      00000000 
+  38      00000000 
+  39              		.comm	DMADone,1,1
+  40              		.section	.rodata
+  41              		.align	2
+  42              	.LC0:
+  43 0000 20202020 		.ascii	"               \000"
+  43      20202020 
+  43      20202020 
+  43      20202000 
+  44              		.section	.text.main,"ax",%progbits
+  45              		.align	2
+  46              		.global	main
+  47              		.thumb
+  48              		.thumb_func
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 2
+
+
+  49              		.type	main, %function
+  50              	main:
+  51              	.LFB56:
+  52              		.file 1 ".\\main.c"
+   1:.\main.c      **** /* ========================================
+   2:.\main.c      ****  *
+   3:.\main.c      ****  * Copyright YOUR COMPANY, THE YEAR
+   4:.\main.c      ****  * All Rights Reserved
+   5:.\main.c      ****  * UNPUBLISHED, LICENSED SOFTWARE.
+   6:.\main.c      ****  *
+   7:.\main.c      ****  * CONFIDENTIAL AND PROPRIETARY INFORMATION
+   8:.\main.c      ****  * WHICH IS THE PROPERTY OF your company.
+   9:.\main.c      ****  *
+  10:.\main.c      ****  * ========================================
+  11:.\main.c      **** */
+  12:.\main.c      **** 
+  13:.\main.c      **** #include <devices.h>
+  14:.\main.c      **** 
+  15:.\main.c      **** /*******************************************************************************
+  16:.\main.c      **** * File: main.c
+  17:.\main.c      **** *
+  18:.\main.c      **** * Version: 3.0
+  19:.\main.c      **** *
+  20:.\main.c      **** * Description:
+  21:.\main.c      **** *   This is a basic design source code.
+  22:.\main.c      **** *
+  23:.\main.c      **** ********************************************************************************/
+  24:.\main.c      **** 
+  25:.\main.c      **** /* Variable declarations for DMA_1 */
+  26:.\main.c      **** uint8 DMA_1_Chan;
+  27:.\main.c      **** uint8 DMA_1_TD[1];
+  28:.\main.c      **** 
+  29:.\main.c      **** 	/* Compare the values extracted from the ADC using DMA, memcpy and using the API */
+  30:.\main.c      **** 	 int16 DMAADCResultArray[ADC_SAR_Seq_1_NUMBER_OF_CHANNELS] = {0};   // *** CHANGED FROM UINT16 ***
+  31:.\main.c      **** 	 int16 MEMCPYResultArray[ADC_SAR_Seq_1_NUMBER_OF_CHANNELS] = {0};   // *** CHANGED FROM UINT16 ***
+  32:.\main.c      **** 	 int16 APIFUNResultArray[ADC_SAR_Seq_1_NUMBER_OF_CHANNELS] = {0};   // *** CHANGED FROM UINT16 ***
+  33:.\main.c      **** 
+  34:.\main.c      **** 
+  35:.\main.c      **** /* DMA Configuration for DMA_1 */
+  36:.\main.c      **** #define DMA_BYTES_PER_BURST 2*ADC_SAR_Seq_1_NUMBER_OF_CHANNELS	//Each TD handles all channels, 1 16
+  37:.\main.c      **** #define DMA_REQUEST_PER_BURST 1
+  38:.\main.c      **** #define DMA_SRC_BASE (CYDEV_SRAM_BASE)	//Regular ADCs result is DMA'd from the Peripheral Spoke. Th
+  39:.\main.c      **** #define DMA_DST_BASE (CYDEV_SRAM_BASE)
+  40:.\main.c      **** 
+  41:.\main.c      **** /* The number of samples of each channel to capture */
+  42:.\main.c      **** #define NumRepsToCapture 100
+  43:.\main.c      **** 
+  44:.\main.c      **** /* Interrupt Flag */
+  45:.\main.c      **** volatile uint8 DMADone;
+  46:.\main.c      **** 
+  47:.\main.c      **** /*******************************************************************************
+  48:.\main.c      **** * Function Name: main
+  49:.\main.c      **** ********************************************************************************
+  50:.\main.c      **** * Summary:
+  51:.\main.c      **** * Main function performs following functions:
+  52:.\main.c      **** * 1: Start the clock
+  53:.\main.c      **** * 2: Start the Timer
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 3
+
+
+  54:.\main.c      **** * 3: Start the interrupts
+  55:.\main.c      **** * 4: Start ADC DelSig and its interrupts
+  56:.\main.c      **** * 5: Testing for sample available from ADC
+  57:.\main.c      **** * 6: Storing the sample into the array
+  58:.\main.c      **** * 7: Comparing the samples
+  59:.\main.c      **** *
+  60:.\main.c      **** * Parameters:
+  61:.\main.c      **** *  None.
+  62:.\main.c      **** *
+  63:.\main.c      **** * Return:
+  64:.\main.c      **** *  None.
+  65:.\main.c      **** *
+  66:.\main.c      **** *******************************************************************************/        
+  67:.\main.c      **** 
+  68:.\main.c      **** int main()
+  69:.\main.c      **** {
+  53              		.loc 1 69 0
+  54              		.cfi_startproc
+  55              		@ args = 0, pretend = 0, frame = 8
+  56              		@ frame_needed = 1, uses_anonymous_args = 0
+  57 0000 90B5     		push	{r4, r7, lr}
+  58              	.LCFI0:
+  59              		.cfi_def_cfa_offset 12
+  60              		.cfi_offset 4, -12
+  61              		.cfi_offset 7, -8
+  62              		.cfi_offset 14, -4
+  63 0002 83B0     		sub	sp, sp, #12
+  64              	.LCFI1:
+  65              		.cfi_def_cfa_offset 24
+  66 0004 00AF     		add	r7, sp, #0
+  67              	.LCFI2:
+  68              		.cfi_def_cfa_register 7
+  70:.\main.c      **** 	uint16 chan=0;
+  69              		.loc 1 70 0
+  70 0006 4FF00003 		mov	r3, #0
+  71 000a FB80     		strh	r3, [r7, #6]	@ movhi
+  71:.\main.c      ****     uint16 print_nmbr;
+  72:.\main.c      **** 	
+  73:.\main.c      **** 	DMADone = 0;	//When the TD completed the DMA transfer this flag is set by the ISR
+  72              		.loc 1 73 0
+  73 000c 40F20003 		movw	r3, #:lower16:DMADone
+  74 0010 C0F20003 		movt	r3, #:upper16:DMADone
+  75 0014 4FF00002 		mov	r2, #0
+  76 0018 1A70     		strb	r2, [r3, #0]
+  74:.\main.c      **** 	
+  75:.\main.c      ****     /* Enable global interrupts */
+  76:.\main.c      ****     CyGlobalIntEnable;
+  77              		.loc 1 76 0
+  78              	@ 76 ".\main.c" 1
+  79 001a 62B6     		CPSIE   i
+  80              	@ 0 "" 2
+  77:.\main.c      ****     
+  78:.\main.c      **** 	//////////////////////////////
+  79:.\main.c      **** 	// Configure the DMA
+  80:.\main.c      **** 	//////////////////////////////
+  81:.\main.c      ****     /* Initializing DMA_1 */
+  82:.\main.c      ****     DMA_1_Chan = DMA_1_DmaInitialize(DMA_BYTES_PER_BURST, DMA_REQUEST_PER_BURST,
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 4
+
+
+  81              		.loc 1 82 0
+  82              		.thumb
+  83 001c 4FF00C00 		mov	r0, #12
+  84 0020 4FF00101 		mov	r1, #1
+  85 0024 41F6FF72 		movw	r2, #8191
+  86 0028 41F6FF73 		movw	r3, #8191
+  87 002c FFF7FEFF 		bl	DMA_1_DmaInitialize
+  88 0030 0346     		mov	r3, r0
+  89 0032 1A46     		mov	r2, r3
+  90 0034 40F20003 		movw	r3, #:lower16:DMA_1_Chan
+  91 0038 C0F20003 		movt	r3, #:upper16:DMA_1_Chan
+  92 003c 1A70     		strb	r2, [r3, #0]
+  83:.\main.c      ****                                      HI16(DMA_SRC_BASE),  HI16(DMA_DST_BASE));
+  84:.\main.c      **** 
+  85:.\main.c      **** 	/* Allocate a TD for each channel */
+  86:.\main.c      **** 	DMA_1_TD[0] = CyDmaTdAllocate();
+  93              		.loc 1 86 0
+  94 003e FFF7FEFF 		bl	CyDmaTdAllocate
+  95 0042 0346     		mov	r3, r0
+  96 0044 1A46     		mov	r2, r3
+  97 0046 40F20003 		movw	r3, #:lower16:DMA_1_TD
+  98 004a C0F20003 		movt	r3, #:upper16:DMA_1_TD
+  99 004e 1A70     		strb	r2, [r3, #0]
+  87:.\main.c      **** 	
+  88:.\main.c      **** 	//step through and setup each TD
+  89:.\main.c      **** 	CyDmaTdSetConfiguration(DMA_1_TD[0], 
+ 100              		.loc 1 89 0
+ 101 0050 40F20003 		movw	r3, #:lower16:DMA_1_TD
+ 102 0054 C0F20003 		movt	r3, #:upper16:DMA_1_TD
+ 103 0058 1B78     		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 104 005a 1846     		mov	r0, r3
+ 105 005c 4FF00C01 		mov	r1, #12
+ 106 0060 4FF0FE02 		mov	r2, #254
+ 107 0064 4FF00203 		mov	r3, #2
+ 108 0068 FFF7FEFF 		bl	CyDmaTdSetConfiguration
+  90:.\main.c      **** 							DMA_BYTES_PER_BURST,
+  91:.\main.c      **** 							DMA_DISABLE_TD,
+  92:.\main.c      **** 							DMA_1__TD_TERMOUT_EN | CY_DMA_TD_INC_DST_ADR );
+  93:.\main.c      ****     
+  94:.\main.c      ****     /* Configuring the TD address for the transfer. Sequencer ADC results are stored in ADC_SAR_Seq
+  95:.\main.c      ****     CyDmaTdSetAddress(DMA_1_TD[0], LO16((uint32)(ADC_SAR_Seq_1_finalArray)), LO16((uint32)(DMAADCRe
+ 109              		.loc 1 95 0
+ 110 006c 40F20003 		movw	r3, #:lower16:DMA_1_TD
+ 111 0070 C0F20003 		movt	r3, #:upper16:DMA_1_TD
+ 112 0074 1978     		ldrb	r1, [r3, #0]	@ zero_extendqisi2
+ 113 0076 40F20003 		movw	r3, #:lower16:ADC_SAR_Seq_1_finalArray
+ 114 007a C0F20003 		movt	r3, #:upper16:ADC_SAR_Seq_1_finalArray
+ 115 007e 9AB2     		uxth	r2, r3
+ 116 0080 40F20003 		movw	r3, #:lower16:DMAADCResultArray
+ 117 0084 C0F20003 		movt	r3, #:upper16:DMAADCResultArray
+ 118 0088 9BB2     		uxth	r3, r3
+ 119 008a 0846     		mov	r0, r1
+ 120 008c 1146     		mov	r1, r2
+ 121 008e 1A46     		mov	r2, r3
+ 122 0090 FFF7FEFF 		bl	CyDmaTdSetAddress
+  96:.\main.c      ****     
+  97:.\main.c      ****     /* Setting initial TD */
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 5
+
+
+  98:.\main.c      ****     CyDmaChSetInitialTd(DMA_1_Chan, DMA_1_TD[0]);
+ 123              		.loc 1 98 0
+ 124 0094 40F20003 		movw	r3, #:lower16:DMA_1_Chan
+ 125 0098 C0F20003 		movt	r3, #:upper16:DMA_1_Chan
+ 126 009c 1A78     		ldrb	r2, [r3, #0]	@ zero_extendqisi2
+ 127 009e 40F20003 		movw	r3, #:lower16:DMA_1_TD
+ 128 00a2 C0F20003 		movt	r3, #:upper16:DMA_1_TD
+ 129 00a6 1B78     		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 130 00a8 1046     		mov	r0, r2
+ 131 00aa 1946     		mov	r1, r3
+ 132 00ac FFF7FEFF 		bl	CyDmaChSetInitialTd
+  99:.\main.c      **** 
+ 100:.\main.c      **** 	//////////////////////////
+ 101:.\main.c      **** 	// Start Components
+ 102:.\main.c      **** 	//////////////////////////
+ 103:.\main.c      **** 	
+ 104:.\main.c      **** 	/* ISR Start */
+ 105:.\main.c      **** 	isr_1_Start();
+ 133              		.loc 1 105 0
+ 134 00b0 FFF7FEFF 		bl	isr_1_Start
+ 106:.\main.c      ****     // isr_1_StartEx(isr_1);
+ 107:.\main.c      ****     LCD_Start();
+ 135              		.loc 1 107 0
+ 136 00b4 FFF7FEFF 		bl	LCD_Start
+ 108:.\main.c      **** 	
+ 109:.\main.c      ****     /* Enable the DMA channel */
+ 110:.\main.c      ****     CyDmaChEnable(DMA_1_Chan, 1);
+ 137              		.loc 1 110 0
+ 138 00b8 40F20003 		movw	r3, #:lower16:DMA_1_Chan
+ 139 00bc C0F20003 		movt	r3, #:upper16:DMA_1_Chan
+ 140 00c0 1B78     		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 141 00c2 1846     		mov	r0, r3
+ 142 00c4 4FF00101 		mov	r1, #1
+ 143 00c8 FFF7FEFF 		bl	CyDmaChEnable
+ 111:.\main.c      **** 
+ 112:.\main.c      **** 	/* Start the ADC */
+ 113:.\main.c      ****     ADC_SAR_Seq_1_Start();
+ 144              		.loc 1 113 0
+ 145 00cc FFF7FEFF 		bl	ADC_SAR_Seq_1_Start
+ 114:.\main.c      **** 	ADC_SAR_Seq_1_IRQ_Disable();	//we're not using the internal interrupt
+ 146              		.loc 1 114 0
+ 147 00d0 FFF7FEFF 		bl	ADC_SAR_Seq_1_IRQ_Disable
+ 115:.\main.c      **** 	ADC_SAR_Seq_1_StartConvert();
+ 148              		.loc 1 115 0
+ 149 00d4 FFF7FEFF 		bl	ADC_SAR_Seq_1_StartConvert
+ 116:.\main.c      **** 	CyDelay(1000);	//give the ADC time to settle
+ 150              		.loc 1 116 0
+ 151 00d8 4FF47A70 		mov	r0, #1000
+ 152 00dc FFF7FEFF 		bl	CyDelay
+ 153 00e0 00E0     		b	.L5
+ 154              	.L6:
+ 117:.\main.c      **** 	
+ 118:.\main.c      ****     for(;;) {
+ 119:.\main.c      **** 		// Capture the requested data...the DMADone flag will set when complete
+ 120:.\main.c      **** 		if(DMADone == 1)
+ 121:.\main.c      **** 		{
+ 122:.\main.c      **** 			//reset the DMA done flag
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 6
+
+
+ 123:.\main.c      **** 			DMADone = 0;
+ 124:.\main.c      ****             ADC_SAR_Seq_1_StopConvert();
+ 125:.\main.c      **** 			
+ 126:.\main.c      **** 			//////////////////////////////////////////////////// 
+ 127:.\main.c      **** 			// Grab the result values manually for comparison:
+ 128:.\main.c      **** 			////////////////////////////////////////////////////
+ 129:.\main.c      **** 			
+ 130:.\main.c      **** 			// USING THE API
+ 131:.\main.c      **** 			/* Channel results are saved in reverse order in the results array. Store them so they appear in
+ 132:.\main.c      **** //            if (ADC_SAR_Seq_1_IsEndConversion(ADC_SAR_Seq_1_WAIT_FOR_RESULT))
+ 133:.\main.c      **** //            {
+ 134:.\main.c      **** 			for(chan = 0; chan < ADC_SAR_Seq_1_NUMBER_OF_CHANNELS; chan++)
+ 135:.\main.c      **** 			{
+ 136:.\main.c      **** 				APIFUNResultArray[chan] = ADC_SAR_Seq_1_GetResult16(ADC_SAR_Seq_1_NUMBER_OF_CHANNELS-chan-1);
+ 137:.\main.c      **** 			}
+ 138:.\main.c      **** //            }
+ 139:.\main.c      **** 
+ 140:.\main.c      **** 			// USING MEMCPY
+ 141:.\main.c      **** /*
+ 142:.\main.c      ****  Jerry says "Why use the following line? We already have the result of the conversion in APIFUNResu
+ 143:.\main.c      ****     It probably won't work anyway because the sar's finalArray is probably already cleared by the G
+ 144:.\main.c      **** 			memcpy(MEMCPYResultArray,ADC_SAR_Seq_1_finalArray,ADC_SAR_Seq_1_NUMBER_OF_CHANNELS*sizeof(uint16
+ 145:.\main.c      ****     INSTEAD, use the following line to move data to a different array.
+ 146:.\main.c      ****             
+ 147:.\main.c      ****     NOTE: the ISR HAS BEEN MOVED to the eoc of the SAR. By the time you get to this line of code, t
+ 148:.\main.c      ****     Now that we have Read the conversion results we have the lesure of doing whatever we want with 
+ 149:.\main.c      **** */
+ 150:.\main.c      **** 			memcpy(MEMCPYResultArray, APIFUNResultArray, ADC_SAR_Seq_1_NUMBER_OF_CHANNELS*sizeof(uint16));
+ 151:.\main.c      ****             
+ 152:.\main.c      **** //  And if your want, do it again to move it to an offset from the MEMCPYResultArray -- say 12 byte
+ 153:.\main.c      **** //  That is, move the APIFUNResultArray anywhere you want in SRAM.
+ 154:.\main.c      **** //  NOTE: We moved all the arrays out of main{} into global variables and removed the "static" clas
+ 155:.\main.c      **** //       Now they are mapped into high SRAM as you can see in the Results Tab under Mux_SAR_ADC_Tes
+ 156:.\main.c      ****             
+ 157:.\main.c      ****                     /* ***  First line of LCD Screen - DO ANYTHING YOU WANT WITH THIS ARRAY  */
+ 158:.\main.c      ****             LCD_Position(0, 0); CyDelay(10);  LCD_PrintString("               ");
+ 159:.\main.c      ****             LCD_Position(0, 0);
+ 160:.\main.c      ****             print_nmbr = MEMCPYResultArray[2];
+ 161:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 162:.\main.c      ****             LCD_Position(0, 6);
+ 163:.\main.c      ****             print_nmbr = MEMCPYResultArray[3];
+ 164:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 165:.\main.c      ****             LCD_Position(0, 11);
+ 166:.\main.c      ****             print_nmbr = MEMCPYResultArray[4];
+ 167:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 168:.\main.c      **** 
+ 169:.\main.c      ****                     /* ***  Second line of LCD Screen - ANALOG INPUT  */
+ 170:.\main.c      ****             LCD_Position(1, 0); CyDelay(10);  LCD_PrintString("               ");
+ 171:.\main.c      ****             LCD_Position(1, 0);
+ 172:.\main.c      ****             print_nmbr = APIFUNResultArray[2];
+ 173:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 174:.\main.c      ****             LCD_Position(1, 6);
+ 175:.\main.c      ****             print_nmbr = APIFUNResultArray[3];
+ 176:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 177:.\main.c      ****             LCD_Position(1, 11);
+ 178:.\main.c      ****             print_nmbr = APIFUNResultArray[4]; 
+ 179:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 7
+
+
+ 180:.\main.c      **** 
+ 181:.\main.c      **** 			
+ 182:.\main.c      **** 			//////////////////////////////////////////////////////
+ 183:.\main.c      **** 			// Put a breakpoint at the next line so that the values in
+ 184:.\main.c      **** 			// the result arrays can be compared.
+ 185:.\main.c      **** 			//////////////////////////////////////////////////////
+ 186:.\main.c      **** 			
+ 187:.\main.c      **** 			/* Enable the DMA channel again */
+ 188:.\main.c      ****     		CyDmaChEnable(DMA_1_Chan, 1);
+ 189:.\main.c      ****             ADC_SAR_Seq_1_StartConvert();   // Let's go another round
+ 190:.\main.c      **** 		}
+ 191:.\main.c      **** 	}
+ 155              		.loc 1 191 0
+ 156 00e2 00BF     		nop
+ 157              	.L5:
+ 120:.\main.c      **** 		if(DMADone == 1)
+ 158              		.loc 1 120 0
+ 159 00e4 40F20003 		movw	r3, #:lower16:DMADone
+ 160 00e8 C0F20003 		movt	r3, #:upper16:DMADone
+ 161 00ec 1B78     		ldrb	r3, [r3, #0]
+ 162 00ee DBB2     		uxtb	r3, r3
+ 163 00f0 012B     		cmp	r3, #1
+ 164 00f2 F6D1     		bne	.L6
+ 123:.\main.c      **** 			DMADone = 0;
+ 165              		.loc 1 123 0
+ 166 00f4 40F20003 		movw	r3, #:lower16:DMADone
+ 167 00f8 C0F20003 		movt	r3, #:upper16:DMADone
+ 168 00fc 4FF00002 		mov	r2, #0
+ 169 0100 1A70     		strb	r2, [r3, #0]
+ 124:.\main.c      ****             ADC_SAR_Seq_1_StopConvert();
+ 170              		.loc 1 124 0
+ 171 0102 FFF7FEFF 		bl	ADC_SAR_Seq_1_StopConvert
+ 134:.\main.c      **** 			for(chan = 0; chan < ADC_SAR_Seq_1_NUMBER_OF_CHANNELS; chan++)
+ 172              		.loc 1 134 0
+ 173 0106 4FF00003 		mov	r3, #0
+ 174 010a FB80     		strh	r3, [r7, #6]	@ movhi
+ 175 010c 13E0     		b	.L3
+ 176              	.L4:
+ 136:.\main.c      **** 				APIFUNResultArray[chan] = ADC_SAR_Seq_1_GetResult16(ADC_SAR_Seq_1_NUMBER_OF_CHANNELS-chan-1);
+ 177              		.loc 1 136 0 discriminator 2
+ 178 010e FC88     		ldrh	r4, [r7, #6]
+ 179 0110 FB88     		ldrh	r3, [r7, #6]	@ movhi
+ 180 0112 C3F10503 		rsb	r3, r3, #5
+ 181 0116 9BB2     		uxth	r3, r3
+ 182 0118 1846     		mov	r0, r3
+ 183 011a FFF7FEFF 		bl	ADC_SAR_Seq_1_GetResult16
+ 184 011e 0346     		mov	r3, r0
+ 185 0120 1A46     		mov	r2, r3
+ 186 0122 40F20003 		movw	r3, #:lower16:APIFUNResultArray
+ 187 0126 C0F20003 		movt	r3, #:upper16:APIFUNResultArray
+ 188 012a 23F81420 		strh	r2, [r3, r4, lsl #1]	@ movhi
+ 134:.\main.c      **** 			for(chan = 0; chan < ADC_SAR_Seq_1_NUMBER_OF_CHANNELS; chan++)
+ 189              		.loc 1 134 0 discriminator 2
+ 190 012e FB88     		ldrh	r3, [r7, #6]	@ movhi
+ 191 0130 03F10103 		add	r3, r3, #1
+ 192 0134 FB80     		strh	r3, [r7, #6]	@ movhi
+ 193              	.L3:
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 8
+
+
+ 134:.\main.c      **** 			for(chan = 0; chan < ADC_SAR_Seq_1_NUMBER_OF_CHANNELS; chan++)
+ 194              		.loc 1 134 0 is_stmt 0 discriminator 1
+ 195 0136 FB88     		ldrh	r3, [r7, #6]
+ 196 0138 052B     		cmp	r3, #5
+ 197 013a E8D9     		bls	.L4
+ 150:.\main.c      **** 			memcpy(MEMCPYResultArray, APIFUNResultArray, ADC_SAR_Seq_1_NUMBER_OF_CHANNELS*sizeof(uint16));
+ 198              		.loc 1 150 0 is_stmt 1
+ 199 013c 40F20002 		movw	r2, #:lower16:MEMCPYResultArray
+ 200 0140 C0F20002 		movt	r2, #:upper16:MEMCPYResultArray
+ 201 0144 40F20003 		movw	r3, #:lower16:APIFUNResultArray
+ 202 0148 C0F20003 		movt	r3, #:upper16:APIFUNResultArray
+ 203 014c 1446     		mov	r4, r2
+ 204 014e 93E80700 		ldmia	r3, {r0, r1, r2}
+ 205 0152 84E80700 		stmia	r4, {r0, r1, r2}
+ 158:.\main.c      ****             LCD_Position(0, 0); CyDelay(10);  LCD_PrintString("               ");
+ 206              		.loc 1 158 0
+ 207 0156 4FF00000 		mov	r0, #0
+ 208 015a 4FF00001 		mov	r1, #0
+ 209 015e FFF7FEFF 		bl	LCD_Position
+ 210 0162 4FF00A00 		mov	r0, #10
+ 211 0166 FFF7FEFF 		bl	CyDelay
+ 212 016a 40F20000 		movw	r0, #:lower16:.LC0
+ 213 016e C0F20000 		movt	r0, #:upper16:.LC0
+ 214 0172 FFF7FEFF 		bl	LCD_PrintString
+ 159:.\main.c      ****             LCD_Position(0, 0);
+ 215              		.loc 1 159 0
+ 216 0176 4FF00000 		mov	r0, #0
+ 217 017a 4FF00001 		mov	r1, #0
+ 218 017e FFF7FEFF 		bl	LCD_Position
+ 160:.\main.c      ****             print_nmbr = MEMCPYResultArray[2];
+ 219              		.loc 1 160 0
+ 220 0182 40F20003 		movw	r3, #:lower16:MEMCPYResultArray
+ 221 0186 C0F20003 		movt	r3, #:upper16:MEMCPYResultArray
+ 222 018a 9B88     		ldrh	r3, [r3, #4]
+ 223 018c BB80     		strh	r3, [r7, #4]	@ movhi
+ 161:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 224              		.loc 1 161 0
+ 225 018e BB88     		ldrh	r3, [r7, #4]
+ 226 0190 1846     		mov	r0, r3
+ 227 0192 FFF7FEFF 		bl	LCD_PrintU32Number
+ 162:.\main.c      ****             LCD_Position(0, 6);
+ 228              		.loc 1 162 0
+ 229 0196 4FF00000 		mov	r0, #0
+ 230 019a 4FF00601 		mov	r1, #6
+ 231 019e FFF7FEFF 		bl	LCD_Position
+ 163:.\main.c      ****             print_nmbr = MEMCPYResultArray[3];
+ 232              		.loc 1 163 0
+ 233 01a2 40F20003 		movw	r3, #:lower16:MEMCPYResultArray
+ 234 01a6 C0F20003 		movt	r3, #:upper16:MEMCPYResultArray
+ 235 01aa DB88     		ldrh	r3, [r3, #6]
+ 236 01ac BB80     		strh	r3, [r7, #4]	@ movhi
+ 164:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 237              		.loc 1 164 0
+ 238 01ae BB88     		ldrh	r3, [r7, #4]
+ 239 01b0 1846     		mov	r0, r3
+ 240 01b2 FFF7FEFF 		bl	LCD_PrintU32Number
+ 165:.\main.c      ****             LCD_Position(0, 11);
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 9
+
+
+ 241              		.loc 1 165 0
+ 242 01b6 4FF00000 		mov	r0, #0
+ 243 01ba 4FF00B01 		mov	r1, #11
+ 244 01be FFF7FEFF 		bl	LCD_Position
+ 166:.\main.c      ****             print_nmbr = MEMCPYResultArray[4];
+ 245              		.loc 1 166 0
+ 246 01c2 40F20003 		movw	r3, #:lower16:MEMCPYResultArray
+ 247 01c6 C0F20003 		movt	r3, #:upper16:MEMCPYResultArray
+ 248 01ca 1B89     		ldrh	r3, [r3, #8]
+ 249 01cc BB80     		strh	r3, [r7, #4]	@ movhi
+ 167:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 250              		.loc 1 167 0
+ 251 01ce BB88     		ldrh	r3, [r7, #4]
+ 252 01d0 1846     		mov	r0, r3
+ 253 01d2 FFF7FEFF 		bl	LCD_PrintU32Number
+ 170:.\main.c      ****             LCD_Position(1, 0); CyDelay(10);  LCD_PrintString("               ");
+ 254              		.loc 1 170 0
+ 255 01d6 4FF00100 		mov	r0, #1
+ 256 01da 4FF00001 		mov	r1, #0
+ 257 01de FFF7FEFF 		bl	LCD_Position
+ 258 01e2 4FF00A00 		mov	r0, #10
+ 259 01e6 FFF7FEFF 		bl	CyDelay
+ 260 01ea 40F20000 		movw	r0, #:lower16:.LC0
+ 261 01ee C0F20000 		movt	r0, #:upper16:.LC0
+ 262 01f2 FFF7FEFF 		bl	LCD_PrintString
+ 171:.\main.c      ****             LCD_Position(1, 0);
+ 263              		.loc 1 171 0
+ 264 01f6 4FF00100 		mov	r0, #1
+ 265 01fa 4FF00001 		mov	r1, #0
+ 266 01fe FFF7FEFF 		bl	LCD_Position
+ 172:.\main.c      ****             print_nmbr = APIFUNResultArray[2];
+ 267              		.loc 1 172 0
+ 268 0202 40F20003 		movw	r3, #:lower16:APIFUNResultArray
+ 269 0206 C0F20003 		movt	r3, #:upper16:APIFUNResultArray
+ 270 020a 9B88     		ldrh	r3, [r3, #4]
+ 271 020c BB80     		strh	r3, [r7, #4]	@ movhi
+ 173:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 272              		.loc 1 173 0
+ 273 020e BB88     		ldrh	r3, [r7, #4]
+ 274 0210 1846     		mov	r0, r3
+ 275 0212 FFF7FEFF 		bl	LCD_PrintU32Number
+ 174:.\main.c      ****             LCD_Position(1, 6);
+ 276              		.loc 1 174 0
+ 277 0216 4FF00100 		mov	r0, #1
+ 278 021a 4FF00601 		mov	r1, #6
+ 279 021e FFF7FEFF 		bl	LCD_Position
+ 175:.\main.c      ****             print_nmbr = APIFUNResultArray[3];
+ 280              		.loc 1 175 0
+ 281 0222 40F20003 		movw	r3, #:lower16:APIFUNResultArray
+ 282 0226 C0F20003 		movt	r3, #:upper16:APIFUNResultArray
+ 283 022a DB88     		ldrh	r3, [r3, #6]
+ 284 022c BB80     		strh	r3, [r7, #4]	@ movhi
+ 176:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 285              		.loc 1 176 0
+ 286 022e BB88     		ldrh	r3, [r7, #4]
+ 287 0230 1846     		mov	r0, r3
+ 288 0232 FFF7FEFF 		bl	LCD_PrintU32Number
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 10
+
+
+ 177:.\main.c      ****             LCD_Position(1, 11);
+ 289              		.loc 1 177 0
+ 290 0236 4FF00100 		mov	r0, #1
+ 291 023a 4FF00B01 		mov	r1, #11
+ 292 023e FFF7FEFF 		bl	LCD_Position
+ 178:.\main.c      ****             print_nmbr = APIFUNResultArray[4]; 
+ 293              		.loc 1 178 0
+ 294 0242 40F20003 		movw	r3, #:lower16:APIFUNResultArray
+ 295 0246 C0F20003 		movt	r3, #:upper16:APIFUNResultArray
+ 296 024a 1B89     		ldrh	r3, [r3, #8]
+ 297 024c BB80     		strh	r3, [r7, #4]	@ movhi
+ 179:.\main.c      ****             LCD_PrintNumber(print_nmbr);
+ 298              		.loc 1 179 0
+ 299 024e BB88     		ldrh	r3, [r7, #4]
+ 300 0250 1846     		mov	r0, r3
+ 301 0252 FFF7FEFF 		bl	LCD_PrintU32Number
+ 188:.\main.c      ****     		CyDmaChEnable(DMA_1_Chan, 1);
+ 302              		.loc 1 188 0
+ 303 0256 40F20003 		movw	r3, #:lower16:DMA_1_Chan
+ 304 025a C0F20003 		movt	r3, #:upper16:DMA_1_Chan
+ 305 025e 1B78     		ldrb	r3, [r3, #0]	@ zero_extendqisi2
+ 306 0260 1846     		mov	r0, r3
+ 307 0262 4FF00101 		mov	r1, #1
+ 308 0266 FFF7FEFF 		bl	CyDmaChEnable
+ 189:.\main.c      ****             ADC_SAR_Seq_1_StartConvert();   // Let's go another round
+ 309              		.loc 1 189 0
+ 310 026a FFF7FEFF 		bl	ADC_SAR_Seq_1_StartConvert
+ 311              		.loc 1 191 0
+ 312 026e 38E7     		b	.L6
+ 313              		.cfi_endproc
+ 314              	.LFE56:
+ 315              		.size	main, .-main
+ 316              		.text
+ 317              	.Letext0:
+ 318              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.0\\psoc creator\\import\\gnu_cs\\arm\\4
+ 319              		.file 3 "./Generated_Source/PSoC5/cytypes.h"
+ 320              		.file 4 "./Generated_Source/PSoC5/ADC_SAR_Seq_1.h"
+ 321              		.file 5 "./Generated_Source/PSoC5/core_cm3.h"
+ 322              		.section	.debug_info,"",%progbits
+ 323              	.Ldebug_info0:
+ 324 0000 AA010000 		.4byte	0x1aa
+ 325 0004 0200     		.2byte	0x2
+ 326 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 327 000a 04       		.byte	0x4
+ 328 000b 01       		.uleb128 0x1
+ 329 000c B1010000 		.4byte	.LASF28
+ 330 0010 01       		.byte	0x1
+ 331 0011 D7000000 		.4byte	.LASF29
+ 332 0015 00000000 		.4byte	.LASF30
+ 333 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 334 001d 00000000 		.4byte	0
+ 335 0021 00000000 		.4byte	0
+ 336 0025 00000000 		.4byte	.Ldebug_line0
+ 337 0029 02       		.uleb128 0x2
+ 338 002a 01       		.byte	0x1
+ 339 002b 06       		.byte	0x6
+ 340 002c 03020000 		.4byte	.LASF0
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 11
+
+
+ 341 0030 02       		.uleb128 0x2
+ 342 0031 01       		.byte	0x1
+ 343 0032 08       		.byte	0x8
+ 344 0033 21010000 		.4byte	.LASF1
+ 345 0037 02       		.uleb128 0x2
+ 346 0038 02       		.byte	0x2
+ 347 0039 05       		.byte	0x5
+ 348 003a A1010000 		.4byte	.LASF2
+ 349 003e 02       		.uleb128 0x2
+ 350 003f 02       		.byte	0x2
+ 351 0040 07       		.byte	0x7
+ 352 0041 F8000000 		.4byte	.LASF3
+ 353 0045 03       		.uleb128 0x3
+ 354 0046 7D010000 		.4byte	.LASF9
+ 355 004a 02       		.byte	0x2
+ 356 004b 4F       		.byte	0x4f
+ 357 004c 50000000 		.4byte	0x50
+ 358 0050 02       		.uleb128 0x2
+ 359 0051 04       		.byte	0x4
+ 360 0052 05       		.byte	0x5
+ 361 0053 FA010000 		.4byte	.LASF4
+ 362 0057 02       		.uleb128 0x2
+ 363 0058 04       		.byte	0x4
+ 364 0059 07       		.byte	0x7
+ 365 005a E6000000 		.4byte	.LASF5
+ 366 005e 02       		.uleb128 0x2
+ 367 005f 08       		.byte	0x8
+ 368 0060 05       		.byte	0x5
+ 369 0061 8E010000 		.4byte	.LASF6
+ 370 0065 02       		.uleb128 0x2
+ 371 0066 08       		.byte	0x8
+ 372 0067 07       		.byte	0x7
+ 373 0068 61010000 		.4byte	.LASF7
+ 374 006c 04       		.uleb128 0x4
+ 375 006d 04       		.byte	0x4
+ 376 006e 05       		.byte	0x5
+ 377 006f 696E7400 		.ascii	"int\000"
+ 378 0073 02       		.uleb128 0x2
+ 379 0074 04       		.byte	0x4
+ 380 0075 07       		.byte	0x7
+ 381 0076 54010000 		.4byte	.LASF8
+ 382 007a 03       		.uleb128 0x3
+ 383 007b AB010000 		.4byte	.LASF10
+ 384 007f 03       		.byte	0x3
+ 385 0080 5B       		.byte	0x5b
+ 386 0081 30000000 		.4byte	0x30
+ 387 0085 03       		.uleb128 0x3
+ 388 0086 46010000 		.4byte	.LASF11
+ 389 008a 03       		.byte	0x3
+ 390 008b 5C       		.byte	0x5c
+ 391 008c 3E000000 		.4byte	0x3e
+ 392 0090 03       		.uleb128 0x3
+ 393 0091 4D010000 		.4byte	.LASF12
+ 394 0095 03       		.byte	0x3
+ 395 0096 5D       		.byte	0x5d
+ 396 0097 57000000 		.4byte	0x57
+ 397 009b 03       		.uleb128 0x3
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 12
+
+
+ 398 009c E0000000 		.4byte	.LASF13
+ 399 00a0 03       		.byte	0x3
+ 400 00a1 5F       		.byte	0x5f
+ 401 00a2 37000000 		.4byte	0x37
+ 402 00a6 02       		.uleb128 0x2
+ 403 00a7 04       		.byte	0x4
+ 404 00a8 04       		.byte	0x4
+ 405 00a9 B8000000 		.4byte	.LASF14
+ 406 00ad 02       		.uleb128 0x2
+ 407 00ae 08       		.byte	0x8
+ 408 00af 04       		.byte	0x4
+ 409 00b0 2F010000 		.4byte	.LASF15
+ 410 00b4 02       		.uleb128 0x2
+ 411 00b5 01       		.byte	0x1
+ 412 00b6 08       		.byte	0x8
+ 413 00b7 9C010000 		.4byte	.LASF16
+ 414 00bb 05       		.uleb128 0x5
+ 415 00bc 7A000000 		.4byte	0x7a
+ 416 00c0 02       		.uleb128 0x2
+ 417 00c1 04       		.byte	0x4
+ 418 00c2 07       		.byte	0x7
+ 419 00c3 85010000 		.4byte	.LASF17
+ 420 00c7 06       		.uleb128 0x6
+ 421 00c8 01       		.byte	0x1
+ 422 00c9 36010000 		.4byte	.LASF31
+ 423 00cd 01       		.byte	0x1
+ 424 00ce 44       		.byte	0x44
+ 425 00cf 6C000000 		.4byte	0x6c
+ 426 00d3 00000000 		.4byte	.LFB56
+ 427 00d7 70020000 		.4byte	.LFE56
+ 428 00db 00000000 		.4byte	.LLST0
+ 429 00df 01       		.byte	0x1
+ 430 00e0 01010000 		.4byte	0x101
+ 431 00e4 07       		.uleb128 0x7
+ 432 00e5 78010000 		.4byte	.LASF18
+ 433 00e9 01       		.byte	0x1
+ 434 00ea 46       		.byte	0x46
+ 435 00eb 85000000 		.4byte	0x85
+ 436 00ef 02       		.byte	0x2
+ 437 00f0 91       		.byte	0x91
+ 438 00f1 6E       		.sleb128 -18
+ 439 00f2 07       		.uleb128 0x7
+ 440 00f3 3B010000 		.4byte	.LASF19
+ 441 00f7 01       		.byte	0x1
+ 442 00f8 47       		.byte	0x47
+ 443 00f9 85000000 		.4byte	0x85
+ 444 00fd 02       		.byte	0x2
+ 445 00fe 91       		.byte	0x91
+ 446 00ff 6C       		.sleb128 -20
+ 447 0100 00       		.byte	0
+ 448 0101 08       		.uleb128 0x8
+ 449 0102 9B000000 		.4byte	0x9b
+ 450 0106 11010000 		.4byte	0x111
+ 451 010a 09       		.uleb128 0x9
+ 452 010b C0000000 		.4byte	0xc0
+ 453 010f 05       		.byte	0x5
+ 454 0110 00       		.byte	0
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 13
+
+
+ 455 0111 0A       		.uleb128 0xa
+ 456 0112 BE000000 		.4byte	.LASF20
+ 457 0116 04       		.byte	0x4
+ 458 0117 1F       		.byte	0x1f
+ 459 0118 01010000 		.4byte	0x101
+ 460 011c 01       		.byte	0x1
+ 461 011d 01       		.byte	0x1
+ 462 011e 0B       		.uleb128 0xb
+ 463 011f 14010000 		.4byte	.LASF21
+ 464 0123 05       		.byte	0x5
+ 465 0124 1606     		.2byte	0x616
+ 466 0126 2C010000 		.4byte	0x12c
+ 467 012a 01       		.byte	0x1
+ 468 012b 01       		.byte	0x1
+ 469 012c 05       		.uleb128 0x5
+ 470 012d 45000000 		.4byte	0x45
+ 471 0131 0C       		.uleb128 0xc
+ 472 0132 6F000000 		.4byte	.LASF22
+ 473 0136 01       		.byte	0x1
+ 474 0137 1A       		.byte	0x1a
+ 475 0138 7A000000 		.4byte	0x7a
+ 476 013c 01       		.byte	0x1
+ 477 013d 05       		.byte	0x5
+ 478 013e 03       		.byte	0x3
+ 479 013f 00000000 		.4byte	DMA_1_Chan
+ 480 0143 08       		.uleb128 0x8
+ 481 0144 7A000000 		.4byte	0x7a
+ 482 0148 53010000 		.4byte	0x153
+ 483 014c 09       		.uleb128 0x9
+ 484 014d C0000000 		.4byte	0xc0
+ 485 0151 00       		.byte	0
+ 486 0152 00       		.byte	0
+ 487 0153 0C       		.uleb128 0xc
+ 488 0154 0B010000 		.4byte	.LASF23
+ 489 0158 01       		.byte	0x1
+ 490 0159 1B       		.byte	0x1b
+ 491 015a 43010000 		.4byte	0x143
+ 492 015e 01       		.byte	0x1
+ 493 015f 05       		.byte	0x5
+ 494 0160 03       		.byte	0x3
+ 495 0161 00000000 		.4byte	DMA_1_TD
+ 496 0165 0C       		.uleb128 0xc
+ 497 0166 8C000000 		.4byte	.LASF24
+ 498 016a 01       		.byte	0x1
+ 499 016b 1E       		.byte	0x1e
+ 500 016c 01010000 		.4byte	0x101
+ 501 0170 01       		.byte	0x1
+ 502 0171 05       		.byte	0x5
+ 503 0172 03       		.byte	0x3
+ 504 0173 00000000 		.4byte	DMAADCResultArray
+ 505 0177 0C       		.uleb128 0xc
+ 506 0178 A6000000 		.4byte	.LASF25
+ 507 017c 01       		.byte	0x1
+ 508 017d 1F       		.byte	0x1f
+ 509 017e 01010000 		.4byte	0x101
+ 510 0182 01       		.byte	0x1
+ 511 0183 05       		.byte	0x5
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 14
+
+
+ 512 0184 03       		.byte	0x3
+ 513 0185 00000000 		.4byte	MEMCPYResultArray
+ 514 0189 0C       		.uleb128 0xc
+ 515 018a 7A000000 		.4byte	.LASF26
+ 516 018e 01       		.byte	0x1
+ 517 018f 20       		.byte	0x20
+ 518 0190 01010000 		.4byte	0x101
+ 519 0194 01       		.byte	0x1
+ 520 0195 05       		.byte	0x5
+ 521 0196 03       		.byte	0x3
+ 522 0197 00000000 		.4byte	APIFUNResultArray
+ 523 019b 0C       		.uleb128 0xc
+ 524 019c 9E000000 		.4byte	.LASF27
+ 525 01a0 01       		.byte	0x1
+ 526 01a1 2D       		.byte	0x2d
+ 527 01a2 BB000000 		.4byte	0xbb
+ 528 01a6 01       		.byte	0x1
+ 529 01a7 05       		.byte	0x5
+ 530 01a8 03       		.byte	0x3
+ 531 01a9 00000000 		.4byte	DMADone
+ 532 01ad 00       		.byte	0
+ 533              		.section	.debug_abbrev,"",%progbits
+ 534              	.Ldebug_abbrev0:
+ 535 0000 01       		.uleb128 0x1
+ 536 0001 11       		.uleb128 0x11
+ 537 0002 01       		.byte	0x1
+ 538 0003 25       		.uleb128 0x25
+ 539 0004 0E       		.uleb128 0xe
+ 540 0005 13       		.uleb128 0x13
+ 541 0006 0B       		.uleb128 0xb
+ 542 0007 03       		.uleb128 0x3
+ 543 0008 0E       		.uleb128 0xe
+ 544 0009 1B       		.uleb128 0x1b
+ 545 000a 0E       		.uleb128 0xe
+ 546 000b 55       		.uleb128 0x55
+ 547 000c 06       		.uleb128 0x6
+ 548 000d 11       		.uleb128 0x11
+ 549 000e 01       		.uleb128 0x1
+ 550 000f 52       		.uleb128 0x52
+ 551 0010 01       		.uleb128 0x1
+ 552 0011 10       		.uleb128 0x10
+ 553 0012 06       		.uleb128 0x6
+ 554 0013 00       		.byte	0
+ 555 0014 00       		.byte	0
+ 556 0015 02       		.uleb128 0x2
+ 557 0016 24       		.uleb128 0x24
+ 558 0017 00       		.byte	0
+ 559 0018 0B       		.uleb128 0xb
+ 560 0019 0B       		.uleb128 0xb
+ 561 001a 3E       		.uleb128 0x3e
+ 562 001b 0B       		.uleb128 0xb
+ 563 001c 03       		.uleb128 0x3
+ 564 001d 0E       		.uleb128 0xe
+ 565 001e 00       		.byte	0
+ 566 001f 00       		.byte	0
+ 567 0020 03       		.uleb128 0x3
+ 568 0021 16       		.uleb128 0x16
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 15
+
+
+ 569 0022 00       		.byte	0
+ 570 0023 03       		.uleb128 0x3
+ 571 0024 0E       		.uleb128 0xe
+ 572 0025 3A       		.uleb128 0x3a
+ 573 0026 0B       		.uleb128 0xb
+ 574 0027 3B       		.uleb128 0x3b
+ 575 0028 0B       		.uleb128 0xb
+ 576 0029 49       		.uleb128 0x49
+ 577 002a 13       		.uleb128 0x13
+ 578 002b 00       		.byte	0
+ 579 002c 00       		.byte	0
+ 580 002d 04       		.uleb128 0x4
+ 581 002e 24       		.uleb128 0x24
+ 582 002f 00       		.byte	0
+ 583 0030 0B       		.uleb128 0xb
+ 584 0031 0B       		.uleb128 0xb
+ 585 0032 3E       		.uleb128 0x3e
+ 586 0033 0B       		.uleb128 0xb
+ 587 0034 03       		.uleb128 0x3
+ 588 0035 08       		.uleb128 0x8
+ 589 0036 00       		.byte	0
+ 590 0037 00       		.byte	0
+ 591 0038 05       		.uleb128 0x5
+ 592 0039 35       		.uleb128 0x35
+ 593 003a 00       		.byte	0
+ 594 003b 49       		.uleb128 0x49
+ 595 003c 13       		.uleb128 0x13
+ 596 003d 00       		.byte	0
+ 597 003e 00       		.byte	0
+ 598 003f 06       		.uleb128 0x6
+ 599 0040 2E       		.uleb128 0x2e
+ 600 0041 01       		.byte	0x1
+ 601 0042 3F       		.uleb128 0x3f
+ 602 0043 0C       		.uleb128 0xc
+ 603 0044 03       		.uleb128 0x3
+ 604 0045 0E       		.uleb128 0xe
+ 605 0046 3A       		.uleb128 0x3a
+ 606 0047 0B       		.uleb128 0xb
+ 607 0048 3B       		.uleb128 0x3b
+ 608 0049 0B       		.uleb128 0xb
+ 609 004a 49       		.uleb128 0x49
+ 610 004b 13       		.uleb128 0x13
+ 611 004c 11       		.uleb128 0x11
+ 612 004d 01       		.uleb128 0x1
+ 613 004e 12       		.uleb128 0x12
+ 614 004f 01       		.uleb128 0x1
+ 615 0050 40       		.uleb128 0x40
+ 616 0051 06       		.uleb128 0x6
+ 617 0052 9642     		.uleb128 0x2116
+ 618 0054 0C       		.uleb128 0xc
+ 619 0055 01       		.uleb128 0x1
+ 620 0056 13       		.uleb128 0x13
+ 621 0057 00       		.byte	0
+ 622 0058 00       		.byte	0
+ 623 0059 07       		.uleb128 0x7
+ 624 005a 34       		.uleb128 0x34
+ 625 005b 00       		.byte	0
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 16
+
+
+ 626 005c 03       		.uleb128 0x3
+ 627 005d 0E       		.uleb128 0xe
+ 628 005e 3A       		.uleb128 0x3a
+ 629 005f 0B       		.uleb128 0xb
+ 630 0060 3B       		.uleb128 0x3b
+ 631 0061 0B       		.uleb128 0xb
+ 632 0062 49       		.uleb128 0x49
+ 633 0063 13       		.uleb128 0x13
+ 634 0064 02       		.uleb128 0x2
+ 635 0065 0A       		.uleb128 0xa
+ 636 0066 00       		.byte	0
+ 637 0067 00       		.byte	0
+ 638 0068 08       		.uleb128 0x8
+ 639 0069 01       		.uleb128 0x1
+ 640 006a 01       		.byte	0x1
+ 641 006b 49       		.uleb128 0x49
+ 642 006c 13       		.uleb128 0x13
+ 643 006d 01       		.uleb128 0x1
+ 644 006e 13       		.uleb128 0x13
+ 645 006f 00       		.byte	0
+ 646 0070 00       		.byte	0
+ 647 0071 09       		.uleb128 0x9
+ 648 0072 21       		.uleb128 0x21
+ 649 0073 00       		.byte	0
+ 650 0074 49       		.uleb128 0x49
+ 651 0075 13       		.uleb128 0x13
+ 652 0076 2F       		.uleb128 0x2f
+ 653 0077 0B       		.uleb128 0xb
+ 654 0078 00       		.byte	0
+ 655 0079 00       		.byte	0
+ 656 007a 0A       		.uleb128 0xa
+ 657 007b 34       		.uleb128 0x34
+ 658 007c 00       		.byte	0
+ 659 007d 03       		.uleb128 0x3
+ 660 007e 0E       		.uleb128 0xe
+ 661 007f 3A       		.uleb128 0x3a
+ 662 0080 0B       		.uleb128 0xb
+ 663 0081 3B       		.uleb128 0x3b
+ 664 0082 0B       		.uleb128 0xb
+ 665 0083 49       		.uleb128 0x49
+ 666 0084 13       		.uleb128 0x13
+ 667 0085 3F       		.uleb128 0x3f
+ 668 0086 0C       		.uleb128 0xc
+ 669 0087 3C       		.uleb128 0x3c
+ 670 0088 0C       		.uleb128 0xc
+ 671 0089 00       		.byte	0
+ 672 008a 00       		.byte	0
+ 673 008b 0B       		.uleb128 0xb
+ 674 008c 34       		.uleb128 0x34
+ 675 008d 00       		.byte	0
+ 676 008e 03       		.uleb128 0x3
+ 677 008f 0E       		.uleb128 0xe
+ 678 0090 3A       		.uleb128 0x3a
+ 679 0091 0B       		.uleb128 0xb
+ 680 0092 3B       		.uleb128 0x3b
+ 681 0093 05       		.uleb128 0x5
+ 682 0094 49       		.uleb128 0x49
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 17
+
+
+ 683 0095 13       		.uleb128 0x13
+ 684 0096 3F       		.uleb128 0x3f
+ 685 0097 0C       		.uleb128 0xc
+ 686 0098 3C       		.uleb128 0x3c
+ 687 0099 0C       		.uleb128 0xc
+ 688 009a 00       		.byte	0
+ 689 009b 00       		.byte	0
+ 690 009c 0C       		.uleb128 0xc
+ 691 009d 34       		.uleb128 0x34
+ 692 009e 00       		.byte	0
+ 693 009f 03       		.uleb128 0x3
+ 694 00a0 0E       		.uleb128 0xe
+ 695 00a1 3A       		.uleb128 0x3a
+ 696 00a2 0B       		.uleb128 0xb
+ 697 00a3 3B       		.uleb128 0x3b
+ 698 00a4 0B       		.uleb128 0xb
+ 699 00a5 49       		.uleb128 0x49
+ 700 00a6 13       		.uleb128 0x13
+ 701 00a7 3F       		.uleb128 0x3f
+ 702 00a8 0C       		.uleb128 0xc
+ 703 00a9 02       		.uleb128 0x2
+ 704 00aa 0A       		.uleb128 0xa
+ 705 00ab 00       		.byte	0
+ 706 00ac 00       		.byte	0
+ 707 00ad 00       		.byte	0
+ 708              		.section	.debug_loc,"",%progbits
+ 709              	.Ldebug_loc0:
+ 710              	.LLST0:
+ 711 0000 00000000 		.4byte	.LFB56
+ 712 0004 02000000 		.4byte	.LCFI0
+ 713 0008 0200     		.2byte	0x2
+ 714 000a 7D       		.byte	0x7d
+ 715 000b 00       		.sleb128 0
+ 716 000c 02000000 		.4byte	.LCFI0
+ 717 0010 04000000 		.4byte	.LCFI1
+ 718 0014 0200     		.2byte	0x2
+ 719 0016 7D       		.byte	0x7d
+ 720 0017 0C       		.sleb128 12
+ 721 0018 04000000 		.4byte	.LCFI1
+ 722 001c 06000000 		.4byte	.LCFI2
+ 723 0020 0200     		.2byte	0x2
+ 724 0022 7D       		.byte	0x7d
+ 725 0023 18       		.sleb128 24
+ 726 0024 06000000 		.4byte	.LCFI2
+ 727 0028 70020000 		.4byte	.LFE56
+ 728 002c 0200     		.2byte	0x2
+ 729 002e 77       		.byte	0x77
+ 730 002f 18       		.sleb128 24
+ 731 0030 00000000 		.4byte	0
+ 732 0034 00000000 		.4byte	0
+ 733              		.section	.debug_aranges,"",%progbits
+ 734 0000 1C000000 		.4byte	0x1c
+ 735 0004 0200     		.2byte	0x2
+ 736 0006 00000000 		.4byte	.Ldebug_info0
+ 737 000a 04       		.byte	0x4
+ 738 000b 00       		.byte	0
+ 739 000c 0000     		.2byte	0
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 18
+
+
+ 740 000e 0000     		.2byte	0
+ 741 0010 00000000 		.4byte	.LFB56
+ 742 0014 70020000 		.4byte	.LFE56-.LFB56
+ 743 0018 00000000 		.4byte	0
+ 744 001c 00000000 		.4byte	0
+ 745              		.section	.debug_ranges,"",%progbits
+ 746              	.Ldebug_ranges0:
+ 747 0000 00000000 		.4byte	.LFB56
+ 748 0004 70020000 		.4byte	.LFE56
+ 749 0008 00000000 		.4byte	0
+ 750 000c 00000000 		.4byte	0
+ 751              		.section	.debug_line,"",%progbits
+ 752              	.Ldebug_line0:
+ 753 0000 6D010000 		.section	.debug_str,"MS",%progbits,1
+ 753      02000C01 
+ 753      00000201 
+ 753      FB0E0D00 
+ 753      01010101 
+ 754              	.LASF30:
+ 755 0000 433A5C55 		.ascii	"C:\\Users\\Jerald\\Owl_Ears\\MUX_SAR_ADC\\Mux_SAR_A"
+ 755      73657273 
+ 755      5C4A6572 
+ 755      616C645C 
+ 755      4F776C5F 
+ 756 002e 44435F54 		.ascii	"DC_Test.cywrk.Archive012\\Mux_SAR_ADC_Test\\Mux_SAR"
+ 756      6573742E 
+ 756      63797772 
+ 756      6B2E4172 
+ 756      63686976 
+ 757 005f 5F414443 		.ascii	"_ADC_Test.cydsn\000"
+ 757      5F546573 
+ 757      742E6379 
+ 757      64736E00 
+ 758              	.LASF22:
+ 759 006f 444D415F 		.ascii	"DMA_1_Chan\000"
+ 759      315F4368 
+ 759      616E00
+ 760              	.LASF26:
+ 761 007a 41504946 		.ascii	"APIFUNResultArray\000"
+ 761      554E5265 
+ 761      73756C74 
+ 761      41727261 
+ 761      7900
+ 762              	.LASF24:
+ 763 008c 444D4141 		.ascii	"DMAADCResultArray\000"
+ 763      44435265 
+ 763      73756C74 
+ 763      41727261 
+ 763      7900
+ 764              	.LASF27:
+ 765 009e 444D4144 		.ascii	"DMADone\000"
+ 765      6F6E6500 
+ 766              	.LASF25:
+ 767 00a6 4D454D43 		.ascii	"MEMCPYResultArray\000"
+ 767      50595265 
+ 767      73756C74 
+ 767      41727261 
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 19
+
+
+ 767      7900
+ 768              	.LASF14:
+ 769 00b8 666C6F61 		.ascii	"float\000"
+ 769      7400
+ 770              	.LASF20:
+ 771 00be 4144435F 		.ascii	"ADC_SAR_Seq_1_finalArray\000"
+ 771      5341525F 
+ 771      5365715F 
+ 771      315F6669 
+ 771      6E616C41 
+ 772              	.LASF29:
+ 773 00d7 2E5C6D61 		.ascii	".\\main.c\000"
+ 773      696E2E63 
+ 773      00
+ 774              	.LASF13:
+ 775 00e0 696E7431 		.ascii	"int16\000"
+ 775      3600
+ 776              	.LASF5:
+ 777 00e6 6C6F6E67 		.ascii	"long unsigned int\000"
+ 777      20756E73 
+ 777      69676E65 
+ 777      6420696E 
+ 777      7400
+ 778              	.LASF3:
+ 779 00f8 73686F72 		.ascii	"short unsigned int\000"
+ 779      7420756E 
+ 779      7369676E 
+ 779      65642069 
+ 779      6E7400
+ 780              	.LASF23:
+ 781 010b 444D415F 		.ascii	"DMA_1_TD\000"
+ 781      315F5444 
+ 781      00
+ 782              	.LASF21:
+ 783 0114 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 783      52784275 
+ 783      66666572 
+ 783      00
+ 784              	.LASF1:
+ 785 0121 756E7369 		.ascii	"unsigned char\000"
+ 785      676E6564 
+ 785      20636861 
+ 785      7200
+ 786              	.LASF15:
+ 787 012f 646F7562 		.ascii	"double\000"
+ 787      6C6500
+ 788              	.LASF31:
+ 789 0136 6D61696E 		.ascii	"main\000"
+ 789      00
+ 790              	.LASF19:
+ 791 013b 7072696E 		.ascii	"print_nmbr\000"
+ 791      745F6E6D 
+ 791      627200
+ 792              	.LASF11:
+ 793 0146 75696E74 		.ascii	"uint16\000"
+ 793      313600
+ 794              	.LASF12:
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 20
+
+
+ 795 014d 75696E74 		.ascii	"uint32\000"
+ 795      333200
+ 796              	.LASF8:
+ 797 0154 756E7369 		.ascii	"unsigned int\000"
+ 797      676E6564 
+ 797      20696E74 
+ 797      00
+ 798              	.LASF7:
+ 799 0161 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 799      206C6F6E 
+ 799      6720756E 
+ 799      7369676E 
+ 799      65642069 
+ 800              	.LASF18:
+ 801 0178 6368616E 		.ascii	"chan\000"
+ 801      00
+ 802              	.LASF9:
+ 803 017d 696E7433 		.ascii	"int32_t\000"
+ 803      325F7400 
+ 804              	.LASF17:
+ 805 0185 73697A65 		.ascii	"sizetype\000"
+ 805      74797065 
+ 805      00
+ 806              	.LASF6:
+ 807 018e 6C6F6E67 		.ascii	"long long int\000"
+ 807      206C6F6E 
+ 807      6720696E 
+ 807      7400
+ 808              	.LASF16:
+ 809 019c 63686172 		.ascii	"char\000"
+ 809      00
+ 810              	.LASF2:
+ 811 01a1 73686F72 		.ascii	"short int\000"
+ 811      7420696E 
+ 811      7400
+ 812              	.LASF10:
+ 813 01ab 75696E74 		.ascii	"uint8\000"
+ 813      3800
+ 814              	.LASF28:
+ 815 01b1 474E5520 		.ascii	"GNU C 4.7.3 20130312 (release) [ARM/embedded-4_7-br"
+ 815      4320342E 
+ 815      372E3320 
+ 815      32303133 
+ 815      30333132 
+ 816 01e4 616E6368 		.ascii	"anch revision 196615]\000"
+ 816      20726576 
+ 816      6973696F 
+ 816      6E203139 
+ 816      36363135 
+ 817              	.LASF4:
+ 818 01fa 6C6F6E67 		.ascii	"long int\000"
+ 818      20696E74 
+ 818      00
+ 819              	.LASF0:
+ 820 0203 7369676E 		.ascii	"signed char\000"
+ 820      65642063 
+ 820      68617200 
+ARM GAS  C:\Users\Jerald\AppData\Local\Temp\ccNuqD00.s 			page 21
+
+
+ 821              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.7.3 20130312 (release) [ARM/embedded-4_7-br
